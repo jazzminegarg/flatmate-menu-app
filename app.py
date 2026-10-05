@@ -7,7 +7,7 @@ import requests
 # --------------------------------------------------------------------
 SHEET_ID = "1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI"
 # Direct data stream URL using standard export path
-READ_URL = f"https://google.com{SHEET_ID}/export?format=csv&gid=0"
+READ_URL = f"https://google.com/{SHEET_ID}/export?format=csv&gid=0"
 
 # Paste your Web App Script URL here when you are ready to write votes back
 API_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE" 
