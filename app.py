@@ -1,28 +1,25 @@
 import streamlit as st
 import pandas as pd
 import requests
+import json
 
 # --------------------------------------------------------------------
-# 1. APPLICATION & DB SETTINGS
+# 1. DATABASE CONFIGURATION
 # --------------------------------------------------------------------
 SHEET_ID = "1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI"
-READ_URL = f"https://google.com{SHEET_ID}/export?format=csv&gid=0"
+JSON_URL = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:json"
+
+# Paste your Web App Script URL here when you are ready to write votes back
 API_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE" 
 
 st.set_page_config(page_title="Drag Menu Planner", page_icon="📅", layout="wide")
 
-# Visual Styling to mimic a slick canvas dashboard
+# Custom Canvas Design CSS
 st.markdown("""
     <style>
-    .dish-pill {
-        background: #ff4b4b; padding: 10px 14px; border-radius: 20px;
-        color: white; font-weight: bold; text-align: center; margin-bottom: 8px;
-        cursor: grab; box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-    }
-    .cal-slot {
-        background: #1e1e24; border: 2px dashed #3a3a42; border-radius: 10px;
-        padding: 12px; min-height: 80px; text-align: center; margin-bottom: 10px;
-    }
+    .main .block-container { padding-top: 1.5rem; max-width: 1200px; }
+    .stButton>button { width: 100%; border-radius: 12px; height: 3.5rem; font-size: 1rem; font-weight: bold; }
+    div[data-testid="stNotification"] { border-radius: 15px; padding: 1.2rem; }
     .matched-box {
         background: #1c3d27; border: 2px solid #2e7d32; border-radius: 10px;
         color: #81c784; padding: 12px; font-weight: bold; text-align: center; margin-bottom: 10px;
@@ -30,58 +27,89 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📅 Flatmate Drag & Drop Menu Board")
-st.write("Drag or click items from your kitchen inventory directly into calendar slots.")
-
-# Fetch active database states
-try:
-    df = pd.read_csv(READ_URL)
-    df.columns = df.columns.str.strip()
-except Exception:
-    st.error("Database connection offline. Verify your Google Sheet share settings.")
-    st.stop()
-
-# Sanitize voting columns
-for col in ['Aashi', 'Meera', 'Jasmine']:
-    df[col] = df[col].fillna("").astype(str).str.strip()
+st.title("📅 Flatmate Menu Board")
+st.write("Click items from your kitchen inventory to assign them to calendar slots.")
 
 # --------------------------------------------------------------------
-# 2. TWO-COLUMN LAYOUT (SIDE SHELF VS CALENDAR CANVAS)
+# SECURE JSON PARSING ENGINE (Bypasses all spreadsheet bugs)
+# --------------------------------------------------------------------
+try:
+    response = requests.get(JSON_URL, timeout=10)
+    raw_text = response.text
+    start_idx = raw_text.find("{")
+    end_idx = raw_text.rfind("}") + 1
+    
+    # FIXED: Clean single-assignment parsing string sequence
+    json_data = json.loads(raw_text[start_idx:end_idx])
+    
+    rows = json_data['table']['rows']
+    cols = [c['label'] if c and 'label' in c and c['label'] else f"Col_{i}" for i, c in enumerate(json_data['table']['cols'])]
+    
+    table_data = []
+    for r in rows:
+        row_vals = [c['v'] if c and 'v' in c else "" for c in r['c']]
+        while len(row_vals) < len(cols):
+            row_vals.append("")
+        table_data.append(row_vals)
+        
+    df = pd.DataFrame(table_data, columns=cols)
+    df.columns = df.columns.str.strip()
+    
+    # Map raw index positions to column names
+    rename_map = {}
+    if "Col_0" in df.columns: rename_map["Col_0"] = "Meal_ID"
+    if "Col_1" in df.columns: rename_map["Col_1"] = "Meal_Name"
+    if "Col_2" in df.columns: rename_map["Col_2"] = "Description"
+    if "Col_3" in df.columns: rename_map["Col_3"] = "Aashi"
+    if "Col_4" in df.columns: rename_map["Col_4"] = "Meera"
+    if "Col_5" in df.columns: rename_map["Col_5"] = "Jasmine"
+    df.rename(columns=rename_map, inplace=True)
+
+except Exception as e:
+    st.error("Database connection offline. Verify your Google Sheet share settings are open.")
+    st.info("Technical Diagnostic System Logs:")
+    st.code(str(e))
+    st.stop()
+
+# Ensure voting columns exist cleanly in memory
+for col in ['Aashi', 'Meera', 'Jasmine']:
+    if col in df.columns:
+        df[col] = df[col].fillna("").astype(str).str.strip()
+    else:
+        df[col] = ""
+
+# --------------------------------------------------------------------
+# 2. APPLICATION RENDERING CANVAS
 # --------------------------------------------------------------------
 col_shelf, col_canvas = st.columns([1, 2], gap="large")
 
 with col_shelf:
     st.subheader("🍲 Sabzi Inventory")
-    st.caption("Select your flatmate profile:")
     user = st.selectbox("Active User:", ["Select Profile", "Aashi", "Meera", "Jasmine"])
-    
     st.write("---")
-    st.write("💡 *Click a meal below to pick it up, then assign it to a day on the right!*")
     
-    # Render active list of database options as actionable items
-    selected_meal = None
-    for _, row in df.iterrows():
-        if st.button(f"🥘 {row['Meal_Name']}", key=f"btn_{row['Meal_ID']}", use_container_width=True):
-            st.session_state['active_pickup'] = row['Meal_Name']
-            st.session_state['active_pickup_id'] = row['Meal_ID']
-            
+    if "Meal_Name" in df.columns:
+        for idx, row in df.iterrows():
+            if pd.notna(row['Meal_Name']) and str(row['Meal_Name']).strip() != "":
+                if st.button(f"🥘 {row['Meal_Name']}", key=f"btn_{idx}", use_container_width=True):
+                    st.session_state['active_pickup'] = row['Meal_Name']
+                    st.session_state['active_pickup_id'] = row['Meal_ID']
+                    
     if 'active_pickup' in st.session_state:
         st.info(f"Holding: **{st.session_state['active_pickup']}** 🖐️")
 
 with col_canvas:
     st.subheader("🗓️ 7-Day Master Calendar")
-    
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     
     if user == "Select Profile":
-        st.warning("Please select your profile name on the left sidebar to start assigning slots.")
+        st.warning("Please select your profile name on the left sidebar to start planning.")
     else:
-        # Generate responsive structural view grid
         for day in days:
             st.markdown(f"### {day}")
             col_l, col_d = st.columns(2)
             
-            # Check for Consensus Matches automatically across your columns
+            # Match Logic
             lunch_match = df[df['Aashi'].str.contains(f"{day}_Lunch", na=False) & 
                              df['Meera'].str.contains(f"{day}_Lunch", na=False) & 
                              df['Jasmine'].str.contains(f"{day}_Lunch", na=False)]
@@ -90,36 +118,44 @@ with col_canvas:
                               df['Meera'].str.contains(f"{day}_Dinner", na=False) & 
                               df['Jasmine'].str.contains(f"{day}_Dinner", na=False)]
             
-            # LUNCH SLOT
             with col_l:
                 if not lunch_match.empty:
-                    st.markdown(f"<div class='matched-box'>☀️ Lunch<br>✨ {lunch_match.iloc['Meal_Name']} ✨</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='matched-box'>☀️ Lunch<br>✨ {lunch_match.iloc[0]['Meal_Name']} ✨</div>", unsafe_allow_html=True)
                 else:
-                    if st.button(f"📥 Drop in {day} Lunch", key=f"drop_{day}_lunch"):
+                    current_vote = df[df[user].str.contains(f"{day}_Lunch", na=False)]
+                    btn_label = f"📥 Drop in {day} Lunch" if current_vote.empty else f"⏳ Voted: {current_vote.iloc[0]['Meal_Name']}"
+                    
+                    if st.button(btn_label, key=f"l_{day}"):
                         if 'active_pickup' in st.session_state:
                             m_id = st.session_state['active_pickup_id']
-                            slot_str = f"{day}_Lunch"
                             if API_URL != "YOUR_GOOGLE_WEB_APP_URL_HERE":
-                                requests.get(f"{API_URL}?mealId={m_id}&roomie={user}&vote={slot_str}")
-                            st.success(f"Placed {st.session_state['active_pickup']}!")
+                                try:
+                                    requests.get(f"{API_URL}?mealId={m_id}&roomie={user}&vote={day}_Lunch")
+                                except:
+                                    pass
+                            st.success(f"Assigned {st.session_state['active_pickup']}!")
                             st.session_state.pop('active_pickup')
                             st.rerun()
                         else:
-                            st.warning("Pick up a meal from the left menu first!")
-            
-            # DINNER SLOT
+                            st.warning("Pick a meal from the left column first!")
+                            
             with col_d:
                 if not dinner_match.empty:
-                    st.markdown(f"<div class='matched-box'>🌙 Dinner<br>✨ {dinner_match.iloc['Meal_Name']} ✨</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='matched-box'>🌙 Dinner<br>✨ {dinner_match.iloc[0]['Meal_Name']} ✨</div>", unsafe_allow_html=True)
                 else:
-                    if st.button(f"📥 Drop in {day} Dinner", key=f"drop_{day}_dinner"):
+                    current_vote = df[df[user].str.contains(f"{day}_Dinner", na=False)]
+                    btn_label = f"📥 Drop in {day} Dinner" if current_vote.empty else f"⏳ Voted: {current_vote.iloc[0]['Meal_Name']}"
+                    
+                    if st.button(btn_label, key=f"d_{day}"):
                         if 'active_pickup' in st.session_state:
                             m_id = st.session_state['active_pickup_id']
-                            slot_str = f"{day}_Dinner"
                             if API_URL != "YOUR_GOOGLE_WEB_APP_URL_HERE":
-                                requests.get(f"{API_URL}?mealId={m_id}&roomie={user}&vote={slot_str}")
-                            st.success(f"Placed {st.session_state['active_pickup']}!")
+                                try:
+                                    requests.get(f"{API_URL}?mealId={m_id}&roomie={user}&vote={day}_Dinner")
+                                except:
+                                    pass
+                            st.success(f"Assigned {st.session_state['active_pickup']}!")
                             st.session_state.pop('active_pickup')
                             st.rerun()
                         else:
-                            st.warning("Pick up a meal from the left menu first!")
+                            st.warning("Pick a meal from the left column first!")
