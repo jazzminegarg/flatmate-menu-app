@@ -728,10 +728,12 @@ calendar_html += """
 </div>
 """
 
-st.markdown(
-    dedent(calendar_html),
-    unsafe_allow_html=True,
-)
+# IMPORTANT:
+# Use st.html() for the calendar instead of st.markdown().
+# st.markdown() runs the HTML through Markdown parsing, which can turn
+# the nested calendar markup into a code block. st.html() renders the
+# HTML/CSS directly.
+st.html(dedent(calendar_html))
 
 
 # ============================================================
