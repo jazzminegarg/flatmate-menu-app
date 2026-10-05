@@ -8,7 +8,7 @@ from io import StringIO
 # --------------------------------------------------------------------
 SHEET_ID = "1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI"
 # CORRECTED: Pointing strictly to ://google.com
-READ_URL = f"https://docs.google.com/spreadsheets/d/1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI/edit?usp=sharing"
+READ_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
 # Paste your Web App Script URL here when you are ready to write votes back
 API_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE" 
