@@ -206,22 +206,18 @@ div[data-testid="stHorizontalBlock"] {
     margin: 8px 7px 4px;
 }
 
-/* ---------- ACTUAL CLICKABLE MEAL CARD ---------- */
+/* ---------- INLINE CALENDAR POPOVER CARDS ---------- */
 
-/*
-The important part:
-these are REAL Streamlit buttons, not HTML.
-Therefore clicking them actually triggers Python.
-*/
+/* Streamlit popover buttons are the actual calendar cards. */
 
-div[data-testid="stHorizontalBlock"] .stButton {
+div[data-testid="stHorizontalBlock"] .stPopover {
     margin: 0 6px 5px;
 }
 
-div[data-testid="stHorizontalBlock"] .stButton > button {
-    width: 100%;
-    height: 77px;
-    min-height: 77px;
+div[data-testid="stHorizontalBlock"] .stPopover > button {
+    width: 100% !important;
+    height: 77px !important;
+    min-height: 77px !important;
 
     background: #FCFAFB !important;
     color: #423A3D !important;
@@ -229,30 +225,57 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
     border: 1px solid #E9E0E3 !important;
     border-radius: 12px !important;
 
-    padding: 7px 7px !important;
+    padding: 7px !important;
 
     font-size: 0.68rem !important;
     font-weight: 700 !important;
-
-    white-space: pre-wrap !important;
     line-height: 1.25 !important;
 
     box-shadow: none !important;
-    transition: 0.12s ease !important;
 }
 
-div[data-testid="stHorizontalBlock"] .stButton > button:hover {
+div[data-testid="stHorizontalBlock"] .stPopover > button:hover {
     background: #FFF7F9 !important;
-    border-color: #D998A4 !important;
     color: #A55C6A !important;
+    border-color: #D998A4 !important;
     transform: translateY(-1px);
 }
 
-/* Empty slot */
+.popover-title {
+    color: #40383B;
+    font-size: 0.98rem;
+    font-weight: 800;
+}
 
-.empty-slot > div[data-testid="stButton"] > button {
+.popover-subtitle {
+    color: #9A8C91;
+    font-size: 0.7rem;
+    margin: 2px 0 12px;
+}
+
+/* Compact popover controls */
+
+div[data-testid="stPopoverBody"] {
+    min-width: 260px;
+}
+
+div[data-testid="stPopoverBody"] div[data-baseweb="select"] > div {
+    border-radius: 10px !important;
+    border-color: #E4DADD !important;
+    background: #FFFBFC !important;
+}
+
+div[data-testid="stPopoverBody"] .stButton > button {
+    min-height: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    font-size: 0.7rem !important;
+}
+
+/* Empty-looking card */
+div[data-testid="stPopover"] > button[aria-label*="choose"] {
     background: #FFFDFD !important;
-    border: 1px dashed #DCCED2 !important;
+    border-style: dashed !important;
     color: #7D7075 !important;
 }
 
@@ -262,39 +285,6 @@ div[data-testid="stHorizontalBlock"] .stButton > button:hover {
     height: 1px;
     background: #EEE7E9;
     margin: 3px 0;
-}
-
-/* ---------- PICKER ---------- */
-
-.picker {
-    max-width: 680px;
-    margin: 18px auto 0;
-    background: #FFFFFF;
-    border: 1px solid #E4DADD;
-    border-radius: 18px;
-    padding: 18px;
-    box-shadow: 0 8px 28px rgba(70, 45, 52, 0.08);
-}
-
-.picker-title {
-    color: #40383B;
-    font-size: 1.05rem;
-    font-weight: 800;
-}
-
-.picker-subtitle {
-    color: #9A8C91;
-    font-size: 0.74rem;
-    margin-top: 3px;
-    margin-bottom: 12px;
-}
-
-/* ---------- PICKER BUTTONS ---------- */
-
-.picker-button > button {
-    height: 45px !important;
-    min-height: 45px !important;
-    border-radius: 12px !important;
 }
 
 /* ---------- FOOTER ---------- */
@@ -459,6 +449,23 @@ def get_meal_name(meal_id):
     return str(
         matches.iloc[0]["Meal_Name"]
     )
+
+
+def get_current_user_meal_id(day, meal_type, person):
+    target = f"{day}_{meal_type}"
+
+    matches = df[
+        df[person].str.contains(
+            target,
+            regex=False,
+            na=False,
+        )
+    ]
+
+    if matches.empty:
+        return None
+
+    return str(matches.iloc[0]["Meal_ID"])
 
 
 def get_slot_info(day, meal_type):
@@ -632,7 +639,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
 # -------------------------
 # DAY HEADERS
 # -------------------------
@@ -644,10 +650,7 @@ for col, day in zip(header_cols, DAYS):
     with col:
 
         current_date = get_date_for_day(day)
-
-        is_today = (
-            current_date == today
-        )
+        is_today = current_date == today
 
         today_html = (
             '<div class="today-pill">today</div>'
@@ -671,104 +674,143 @@ for col, day in zip(header_cols, DAYS):
 # THREE MEAL ROWS
 # -------------------------
 
-for meal_icon, meal_type in MEAL_TYPES:
+for meal_index, (meal_icon, meal_type) in enumerate(MEAL_TYPES):
 
-    # Meal labels
-    label_cols = st.columns(
-        7,
-        gap="small",
-    )
+    # Small meal label above each row.
+    label_cols = st.columns(7, gap="small")
 
     for col in label_cols:
-
         with col:
-
             st.markdown(
-                f'<div class="slot-label">'
-                f'{meal_icon} {meal_type}'
-                f'</div>',
+                f'<div class="slot-label">{meal_icon} {meal_type}</div>',
                 unsafe_allow_html=True,
             )
 
-    # Actual clickable cards
-    meal_cols = st.columns(
-        7,
-        gap="small",
-    )
+    # Every calendar card is now a popover.
+    # Nothing opens below the calendar.
+    meal_cols = st.columns(7, gap="small")
 
-    for col, day in zip(
-        meal_cols,
-        DAYS,
-    ):
+    for col, day in zip(meal_cols, DAYS):
 
         with col:
 
-            winning_meal, voters, votes = (
-                get_slot_info(
-                    day,
-                    meal_type,
-                )
+            winning_meal, voters, votes = get_slot_info(
+                day,
+                meal_type,
             )
 
             slot = f"{day}_{meal_type}"
 
-            if winning_meal is None:
-
-                label = (
-                    "＋\n"
-                    "choose\n"
-                    "your turn"
-                )
-
-            else:
-
-                name = get_meal_name(
-                    winning_meal
-                )
-
-                count = len(voters)
-
-                initials = " ".join(
-                    person[0]
-                    for person in voters
-                )
-
-                if count == len(USERS):
-
-                    status = (
-                        f"{initials}\n"
-                        "✓ everyone agrees ♡"
-                    )
-
-                else:
-
-                    status = (
-                        f"{initials}\n"
-                        f"{count}/3 · voting"
-                    )
-
-                label = (
-                    f"🍛 {name}\n"
-                    f"{status}"
-                )
-
-            clicked = st.button(
-                label,
-                key=f"calendar_{slot}",
-                use_container_width=True,
+            current_user_meal = get_current_user_meal_id(
+                day,
+                meal_type,
+                user,
             )
 
-            if clicked:
+            if winning_meal is None:
+                button_label = "＋  choose"
+            else:
+                name = get_meal_name(winning_meal)
+                count = len(voters)
 
-                st.session_state[
-                    "active_slot"
-                ] = slot
+                if count == len(USERS):
+                    button_label = f"🍛 {name}  ·  ✓"
+                else:
+                    button_label = f"🍛 {name}  ·  {count}/3"
 
-                st.rerun()
+            # Popover is attached directly to the calendar card.
+            with st.popover(
+                button_label,
+                use_container_width=True,
+            ):
 
-    # Divider between rows
-    if meal_type != "Dinner":
+                st.markdown(
+                    f"""
+                    <div class="popover-title">
+                        {meal_icon} {day} · {meal_type}
+                    </div>
+                    <div class="popover-subtitle">
+                        choose your meal, {user} ♡
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
+                meal_options = df[
+                    ["Meal_ID", "Meal_Name"]
+                ].copy()
+
+                meal_options["Meal_ID"] = (
+                    meal_options["Meal_ID"]
+                    .astype(str)
+                )
+
+                meal_options["Meal_Name"] = (
+                    meal_options["Meal_Name"]
+                    .astype(str)
+                )
+
+                option_ids = meal_options["Meal_ID"].tolist()
+                option_names = meal_options["Meal_Name"].tolist()
+
+                if current_user_meal in option_ids:
+                    default_index = option_ids.index(
+                        current_user_meal
+                    )
+                else:
+                    default_index = 0
+
+                selected_id = st.selectbox(
+                    "Meal",
+                    option_ids,
+                    index=default_index,
+                    format_func=lambda meal_id: (
+                        dict(
+                            zip(option_ids, option_names)
+                        ).get(
+                            str(meal_id),
+                            str(meal_id),
+                        )
+                    ),
+                    key=f"select_{slot}",
+                    label_visibility="collapsed",
+                )
+
+                save_col, clear_col = st.columns(2)
+
+                with save_col:
+                    save_clicked = st.button(
+                        "Save ♡",
+                        key=f"save_{slot}",
+                        use_container_width=True,
+                    )
+
+                with clear_col:
+                    close_clicked = st.button(
+                        "Close",
+                        key=f"close_{slot}",
+                        use_container_width=True,
+                    )
+
+                if save_clicked:
+
+                    saved = save_vote(
+                        selected_id,
+                        user,
+                        slot,
+                    )
+
+                    if saved:
+                        st.toast(
+                            f"Saved for {day} {meal_type} ♡"
+                        )
+                        st.rerun()
+
+                if close_clicked:
+                    st.rerun()
+
+    # Subtle separator between breakfast/lunch/dinner.
+    if meal_index < len(MEAL_TYPES) - 1:
         st.markdown(
             '<div class="slot-divider"></div>',
             unsafe_allow_html=True,
@@ -782,111 +824,8 @@ st.markdown(
 
 
 # ============================================================
-# MEAL PICKER
+# FOOTER
 # ============================================================
-
-if "active_slot" in st.session_state:
-
-    active_slot = (
-        st.session_state["active_slot"]
-    )
-
-    active_day, active_meal_type = (
-        active_slot.split("_", 1)
-    )
-
-    st.markdown(
-        f"""
-        <div class="picker">
-            <div class="picker-title">
-                {active_day} · {active_meal_type}
-            </div>
-
-            <div class="picker-subtitle">
-                choose your meal, {user} ♡
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    search = st.text_input(
-        "Search meals",
-        placeholder="🔍  search meals...",
-        label_visibility="collapsed",
-        key="meal_search",
-    )
-
-    meals = df.copy()
-
-    if search:
-
-        meals = meals[
-            meals["Meal_Name"]
-            .astype(str)
-            .str.contains(
-                search,
-                case=False,
-                na=False,
-            )
-        ]
-
-    picker_cols = st.columns(2)
-
-    for index, (_, row) in enumerate(
-        meals.iterrows()
-    ):
-
-        with picker_cols[index % 2]:
-
-            if st.button(
-                f"🍛 {row['Meal_Name']}",
-                key=(
-                    f"choose_{active_slot}_"
-                    f"{row['Meal_ID']}"
-                ),
-                use_container_width=True,
-            ):
-
-                saved = save_vote(
-                    row["Meal_ID"],
-                    user,
-                    active_slot,
-                )
-
-                if saved:
-
-                    st.session_state.pop(
-                        "active_slot",
-                        None,
-                    )
-
-                    st.session_state.pop(
-                        "meal_search",
-                        None,
-                    )
-
-                    st.success("saved ♡")
-                    st.rerun()
-
-    if st.button(
-        "close",
-        key="close_picker",
-        use_container_width=True,
-    ):
-
-        st.session_state.pop(
-            "active_slot",
-            None,
-        )
-
-        st.session_state.pop(
-            "meal_search",
-            None,
-        )
-
-        st.rerun()
-
 
 # ============================================================
 # FOOTER
