@@ -3,89 +3,114 @@ import pandas as pd
 import requests
 
 # --------------------------------------------------------------------
-# 1. DATABASE CONFIGURATION (REPLACE WITH YOUR GOOGLE SHEET ID)
+# 1. DATABASE CONFIGURATION
 # --------------------------------------------------------------------
-SHEET_ID = "1aBcD-eFgHiJkLmNoPqRsTuVwXyZ1234567890QWERTY"  # <-- Paste your long spreadsheet ID here
+SHEET_ID = "1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI"
 READ_URL = f"https://google.com{SHEET_ID}/export?format=csv&gid=0"
+
+# PASTE YOUR GOOGLE WEB APP URL HERE:
+API_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE" 
 
 st.set_page_config(page_title="Flatmate Menu App", page_icon="🍲", layout="centered")
 
-# Custom CSS styling to make it look like a sleek native mobile web app
+# Mobile Optimization CSS
 st.markdown("""
     <style>
-    .main .block-container { padding-top: 2rem; max-width: 450px; }
-    .stButton>button { width: 100%; border-radius: 12px; height: 3.5rem; font-size: 1.1rem; font-weight: bold; }
-    div[data-testid="stNotification"] { border-radius: 15px; padding: 1.5rem; }
+    .main .block-container { padding-top: 1.5rem; max-width: 420px; }
+    .stButton>button { width: 100%; border-radius: 12px; height: 3.8rem; font-size: 1.1rem; font-weight: bold; }
+    div[data-testid="stNotification"] { border-radius: 15px; padding: 1.2rem; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🍲 Flatmate Menu Swiper")
-st.write("Swipe through custom meals to generate next week's menu layout.")
+st.write("Swipe through meals to build next week's menu together.")
 
 # --------------------------------------------------------------------
-# 2. FLAT MATE PROFILE LOGIN
+# 2. PROFILE SELECTOR
 # --------------------------------------------------------------------
 flatmates = ["Select Profile", "Roomie1", "Roomie2", "Roomie3"]
 current_user = st.selectbox("Who is swiping right now?", flatmates)
 
 if current_user != "Select Profile":
-    # Read live data from Google Sheet
+    # Load live spreadsheet rows with error handling diagnostic tool
     try:
         df = pd.read_csv(READ_URL)
+        # Force all column names to string and strip whitespace to prevent parsing errors
+        df.columns = df.columns.str.strip()
     except Exception as e:
-        st.error("Connection Error: Make sure your Google Sheet access is set to 'Anyone with the link can Edit'.")
+        st.error(f"Spreadsheet Read Error: {str(e)}")
+        st.info("💡 Pro-Tip: Go to your Google Sheet, type something into the first row of your description column (e.g., 'Healthy Option') and try reloading this page.")
         st.stop()
 
-    # Define user specific column tracking
     user_col = f"{current_user}_Vote"
     
-    # Filter meals the current user hasn't voted on yet
-    unvoted_meals = df[df[user_col].isna() | (df[user_col] == '') | (df[user_col] == 'None')]
+    # Fill blank description boxes safely so the code doesn't crash
+    if 'Description' in df.columns:
+        df['Description'] = df['Description'].fillna("Healthy homemade meal choice").astype(str)
+    else:
+        df['Description'] = "Healthy homemade meal choice"
+
+    # Check for empty cells or unvoted entries
+    if user_col in df.columns:
+        df[user_col] = df[user_col].fillna("None").astype(str).str.strip()
+        unvoted_meals = df[df[user_col] == "None"]
+    else:
+        st.error(f"Column '{user_col}' not found in your Google Sheet headers. Please check row 1 spelling.")
+        st.stop()
 
     if not unvoted_meals.empty:
-        # Get the first unvoted meal item (The Top Card)
+        # Pull the top active item card
         current_row = unvoted_meals.iloc[0]
         meal_id = current_row['Meal_ID']
         
-        # Display the custom meal card container
+        # Display Current Food Card
         st.info(f"### {current_row['Meal_Name']}\n\n*{current_row['Description']}*")
         
-        st.write("---")
-        # Layout action choices matching mobile swipe patterns
         col1, col2 = st.columns(2)
-        
         with col1:
             if st.button("❌ DISLIKE", key="dislike_btn"):
-                # Simulating backend write sequence back to sheet cell framework
+                if API_URL != "YOUR_GOOGLE_WEB_APP_URL_HERE":
+                    try:
+                        requests.get(f"{API_URL}?mealId={meal_id}&roomie={current_user}&vote=Dislike", timeout=5)
+                    except:
+                        pass
                 st.toast(f"Skipped {current_row['Meal_Name']}")
-                # Internal tracker logic
-                df.loc[df['Meal_ID'] == meal_id, user_col] = 'Dislike'
-                # Note: For strict cloud write persistence, trigger web-app URL scripts or direct forms.
                 st.rerun()
                 
         with col2:
             if st.button("💚 LIKE", key="like_btn"):
-                st.toast(f"Liked {current_row['Meal_Name']}!")
-                df.loc[df['Meal_ID'] == meal_id, user_col] = 'Like'
+                if API_URL != "YOUR_GOOGLE_WEB_APP_URL_HERE":
+                    try:
+                        requests.get(f"{API_URL}?mealId={meal_id}&roomie={current_user}&vote=Like", timeout=5)
+                    except:
+                        pass
+                st.toast(f"Added {current_row['Meal_Name']} to choices!")
                 st.rerun()
     else:
-        st.success("🎉 You've swiped through all available meals in the database!")
+        st.success("🎉 You've swiped through all available meals!")
 
     # --------------------------------------------------------------------
-    # 4. THE DECLARED WEEKLY CONSENSUS ALGORITHM CALENDAR
+    # 3. LIVE MATCHES CONSENSUS VIEW
     # --------------------------------------------------------------------
     st.markdown("### 📋 Final Group Consensus Matches")
-    st.caption("Items liked by all 3 flatmates will instantly populate below:")
+    st.caption("Meals liked by ALL 3 flatmates populate here:")
 
-    # Find rows where all three voting columns evaluate strictly to 'Like'
+    # Ensure all voting columns exist before evaluating logic
+    vote_cols = ['Roomie1_Vote', 'Roomie2_Vote', 'Roomie3_Vote']
+    for col in vote_cols:
+        if col in df.columns:
+            df[col] = df[col].fillna("None").astype(str).str.strip()
+        else:
+            df[col] = "None"
+
     consensus_df = df[
-        (df['Roomie1_Vote'] == 'Like') & 
-        (df['Roomie2_Vote'] == 'Like') & 
-        (df['Roomie3_Vote'] == 'Like')
+        (df['Roomie1_Vote'] == "Like") & 
+        (df['Roomie2_Vote'] == "Like") & 
+        (df['Roomie3_Vote'] == "Like")
     ]
 
     if not consensus_df.empty:
-        for idx, row in consensus_df.iterrows():
+        for _, row in consensus_df.iterrows():
             st.markdown(f"✅ **{row['Meal_Name']}** — *{row['Description']}*")
     else:
-        st.warning("No matches found yet. Keep swiping until all three of you agree on choices!")
+        st.warning("No uniform matches found yet. Keep swiping!")
