@@ -883,12 +883,8 @@ for meal_index, (meal_icon, meal_type) in enumerate(
                     )
 
                 if saved:
-
-                    st.toast(
-                        f"Saved {day} {meal_type} ♡",
-                        icon="♡",
-                    )
-
+                    # Refresh the calendar immediately after the Google
+                    # Sheet write. This avoids version-specific toast APIs.
                     st.rerun()
 
     # Small divider between meal groups.
