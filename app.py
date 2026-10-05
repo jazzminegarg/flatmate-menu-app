@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 import requests
-import json
 
 # --------------------------------------------------------------------
-# 1. DATABASE CONFIGURATION (HARDCODED DIRECT LINK - ZERO ACCIDENTAL TYPOS)
+# 1. DATABASE CONFIGURATION
 # --------------------------------------------------------------------
-# Directly utilizing the exact, unbreakable public data endpoint for your sheet ID
-JSON_URL = "https://google.com"
+SHEET_ID = "1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI"
+# Direct data stream URL using standard export path
+READ_URL = f"https://google.com{SHEET_ID}/export?format=csv&gid=0"
 
 # Paste your Web App Script URL here when you are ready to write votes back
 API_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE" 
@@ -31,38 +31,21 @@ st.title("📅 Flatmate Menu Board")
 st.write("Click items from your kitchen inventory to assign them to calendar slots.")
 
 # --------------------------------------------------------------------
-# SECURE JSON PARSING ENGINE (Bypasses all spreadsheet bugs)
+# PURE DATA PARSING STREAM
 # --------------------------------------------------------------------
 try:
-    response = requests.get(JSON_URL, timeout=10)
-    raw_text = response.text
-    start_idx = raw_text.find("{")
-    end_idx = raw_text.rfind("}") + 1
+    # Adding a browser user-agent header avoids Google blocking the cloud download request
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    response = requests.get(READ_URL, headers=headers, timeout=10)
     
-    json_data = json.loads(raw_text[start_idx:end_idx])
-    
-    rows = json_data['table']['rows']
-    cols = [c['label'] if c and 'label' in c and c['label'] else f"Col_{i}" for i, c in enumerate(json_data['table']['cols'])]
-    
-    table_data = []
-    for r in rows:
-        row_vals = [c['v'] if c and 'v' in c else "" for c in r['c']]
-        while len(row_vals) < len(cols):
-            row_vals.append("")
-        table_data.append(row_vals)
-        
-    df = pd.DataFrame(table_data, columns=cols)
-    df.columns = df.columns.str.strip()
-    
-    # Map raw index positions to column names precisely
-    rename_map = {}
-    if "Col_0" in df.columns: rename_map["Col_0"] = "Meal_ID"
-    if "Col_1" in df.columns: rename_map["Col_1"] = "Meal_Name"
-    if "Col_2" in df.columns: rename_map["Col_2"] = "Description"
-    if "Col_3" in df.columns: rename_map["Col_3"] = "Aashi"
-    if "Col_4" in df.columns: rename_map["Col_4"] = "Meera"
-    if "Col_5" in df.columns: rename_map["Col_5"] = "Jasmine"
-    df.rename(columns=rename_map, inplace=True)
+    # Check if download was successful
+    if response.status_code == 200:
+        # Load the CSV data text stream into a table dataframe directly
+        from io import StringIO
+        df = pd.read_StringIO = pd.read_csv(StringIO(response.text))
+        df.columns = df.columns.str.strip()
+    else:
+        raise Exception(f"Google server rejected download with code: {response.status_code}")
 
 except Exception as e:
     st.error("Database connection offline. Verify your Google Sheet share settings are open.")
@@ -70,7 +53,7 @@ except Exception as e:
     st.code(str(e))
     st.stop()
 
-# Ensure voting columns exist cleanly in memory
+# Ensure voting columns exist cleanly in memory and are named after your real column headers
 for col in ['Aashi', 'Meera', 'Jasmine']:
     if col in df.columns:
         df[col] = df[col].fillna("").astype(str).str.strip()
@@ -108,7 +91,7 @@ with col_canvas:
             st.markdown(f"### {day}")
             col_l, col_d = st.columns(2)
             
-            # Match Logic matching cell contents
+            # Match Logic matching cell contents across your exact columns
             lunch_match = df[df['Aashi'].str.contains(f"{day}_Lunch", na=False) & 
                              df['Meera'].str.contains(f"{day}_Lunch", na=False) & 
                              df['Jasmine'].str.contains(f"{day}_Lunch", na=False)]
