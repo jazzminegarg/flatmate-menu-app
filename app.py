@@ -1,13 +1,14 @@
 import streamlit as st
 import pandas as pd
 import requests
+from io import StringIO
 
 # --------------------------------------------------------------------
-# 1. DATABASE CONFIGURATION
+# 1. DATABASE CONFIGURATION (FIXED LINK WITH THE PROPER GOOGLE DOCS BASE)
 # --------------------------------------------------------------------
 SHEET_ID = "1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI"
-# Direct data stream URL using standard export path
-READ_URL = f"https://google.com/{SHEET_ID}/export?format=csv&gid=0"
+# CORRECTED: Pointing strictly to ://google.com
+READ_URL = f"https://://google.com{SHEET_ID}/export?format=csv&gid=0"
 
 # Paste your Web App Script URL here when you are ready to write votes back
 API_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE" 
@@ -34,15 +35,12 @@ st.write("Click items from your kitchen inventory to assign them to calendar slo
 # PURE DATA PARSING STREAM
 # --------------------------------------------------------------------
 try:
-    # Adding a browser user-agent header avoids Google blocking the cloud download request
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     response = requests.get(READ_URL, headers=headers, timeout=10)
     
-    # Check if download was successful
     if response.status_code == 200:
-        # Load the CSV data text stream into a table dataframe directly
-        from io import StringIO
-        df = pd.read_StringIO = pd.read_csv(StringIO(response.text))
+        # FIXED: Removed the faulty read_StringIO structural typo
+        df = pd.read_csv(StringIO(response.text))
         df.columns = df.columns.str.strip()
     else:
         raise Exception(f"Google server rejected download with code: {response.status_code}")
@@ -53,7 +51,7 @@ except Exception as e:
     st.code(str(e))
     st.stop()
 
-# Ensure voting columns exist cleanly in memory and are named after your real column headers
+# Ensure voting columns exist cleanly in memory and match your exact headers
 for col in ['Aashi', 'Meera', 'Jasmine']:
     if col in df.columns:
         df[col] = df[col].fillna("").astype(str).str.strip()
@@ -91,7 +89,7 @@ with col_canvas:
             st.markdown(f"### {day}")
             col_l, col_d = st.columns(2)
             
-            # Match Logic matching cell contents across your exact columns
+            # Match Logic tracking matching selections across your exact names columns
             lunch_match = df[df['Aashi'].str.contains(f"{day}_Lunch", na=False) & 
                              df['Meera'].str.contains(f"{day}_Lunch", na=False) & 
                              df['Jasmine'].str.contains(f"{day}_Lunch", na=False)]
