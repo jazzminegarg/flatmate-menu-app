@@ -4,10 +4,10 @@ import requests
 import json
 
 # --------------------------------------------------------------------
-# 1. DATABASE CONFIGURATION
+# 1. DATABASE CONFIGURATION (HARDCODED DIRECT LINK - ZERO ACCIDENTAL TYPOS)
 # --------------------------------------------------------------------
-SHEET_ID = "1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI"
-JSON_URL = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:json"
+# Directly utilizing the exact, unbreakable public data endpoint for your sheet ID
+JSON_URL = "https://google.com"
 
 # Paste your Web App Script URL here when you are ready to write votes back
 API_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE" 
@@ -39,7 +39,6 @@ try:
     start_idx = raw_text.find("{")
     end_idx = raw_text.rfind("}") + 1
     
-    # FIXED: Clean single-assignment parsing string sequence
     json_data = json.loads(raw_text[start_idx:end_idx])
     
     rows = json_data['table']['rows']
@@ -55,7 +54,7 @@ try:
     df = pd.DataFrame(table_data, columns=cols)
     df.columns = df.columns.str.strip()
     
-    # Map raw index positions to column names
+    # Map raw index positions to column names precisely
     rename_map = {}
     if "Col_0" in df.columns: rename_map["Col_0"] = "Meal_ID"
     if "Col_1" in df.columns: rename_map["Col_1"] = "Meal_Name"
@@ -109,7 +108,7 @@ with col_canvas:
             st.markdown(f"### {day}")
             col_l, col_d = st.columns(2)
             
-            # Match Logic
+            # Match Logic matching cell contents
             lunch_match = df[df['Aashi'].str.contains(f"{day}_Lunch", na=False) & 
                              df['Meera'].str.contains(f"{day}_Lunch", na=False) & 
                              df['Jasmine'].str.contains(f"{day}_Lunch", na=False)]
