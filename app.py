@@ -48,23 +48,25 @@ st.set_page_config(
 
 
 # ============================================================
-# CSS
+# DESIGN
 # ============================================================
 
 st.markdown(
     """
 <style>
 
-/* ---------- PAGE ---------- */
+/* ============================================================
+   PAGE
+   ============================================================ */
 
 .stApp {
-    background: #F8F5F6;
-    color: #332E30;
+    background: #FAF7F8;
+    color: #383134;
 }
 
 .main .block-container {
-    max-width: 1500px;
-    padding: 1rem 1.5rem 2rem;
+    max-width: 1480px;
+    padding: 0.85rem 1.35rem 1.4rem;
 }
 
 #MainMenu,
@@ -73,235 +75,289 @@ header {
     visibility: hidden;
 }
 
-/* ---------- HEADER ---------- */
+/* ============================================================
+   HEADER
+   ============================================================ */
 
 .app-title {
     text-align: center;
-    color: #332E30;
-    font-size: 2.35rem;
+    color: #302A2D;
+    font-size: 2.25rem;
     font-weight: 800;
     letter-spacing: -1.8px;
-    line-height: 1.05;
-    margin-top: 0.1rem;
+    line-height: 1;
+    margin: 0;
 }
 
 .app-subtitle {
     text-align: center;
-    color: #9A8C91;
-    font-size: 0.88rem;
-    margin-top: 5px;
-    margin-bottom: 8px;
+    color: #A09297;
+    font-size: 0.78rem;
+    margin: 5px 0 8px;
 }
 
-/* ---------- PROFILE ---------- */
+/* ============================================================
+   PROFILE
+   ============================================================ */
 
-div[data-testid="stSelectbox"] {
-    max-width: 270px;
-    margin: 8px auto 5px;
+div[data-testid="stSelectbox"].profile-box {
+    max-width: 260px;
+    margin: 7px auto 5px;
+}
+
+/* Streamlit does not preserve custom class names on every version,
+   so this also targets the first selectbox by its position. */
+div[data-testid="stSelectbox"] > div {
+    border-radius: 11px;
 }
 
 div[data-baseweb="select"] > div {
     background: #FFFFFF !important;
-    border: 1px solid #E2D7DB !important;
-    border-radius: 12px !important;
-    color: #51484B !important;
+    border: 1px solid #E4DADD !important;
+    border-radius: 11px !important;
+    color: #554B50 !important;
+    box-shadow: none !important;
 }
 
 .user-row {
     display: flex;
     justify-content: center;
-    gap: 7px;
-    margin: 10px 0 6px;
+    align-items: center;
+    gap: 6px;
+    margin: 9px 0 4px;
 }
 
 .user-pill {
     background: #FFFFFF;
     border: 1px solid #E5DBDE;
     border-radius: 999px;
-    padding: 6px 11px;
-    color: #796D72;
-    font-size: 0.72rem;
+    padding: 5px 10px;
+    color: #817479;
+    font-size: 0.68rem;
 }
 
 .user-pill.active {
-    background: #F5E1E6;
+    background: #F7E2E7;
     border-color: #E0AAB5;
-    color: #A65D6C;
+    color: #A85D6C;
     font-weight: 750;
 }
 
 .progress {
     text-align: center;
-    color: #94878C;
-    font-size: 0.74rem;
-    margin: 7px 0 14px;
+    color: #9C8E93;
+    font-size: 0.68rem;
+    margin: 6px 0 12px;
 }
 
-/* ---------- CALENDAR ---------- */
+/* ============================================================
+   CALENDAR OUTER CARD
+   ============================================================ */
 
 .calendar-shell {
     background: #FFFFFF;
-    border: 1px solid #E3D9DC;
-    border-radius: 20px;
+    border: 1px solid #E6DDE0;
+    border-radius: 18px;
     overflow: hidden;
-    box-shadow: 0 8px 28px rgba(70, 45, 52, 0.07);
+    box-shadow: 0 6px 22px rgba(77, 53, 60, 0.055);
 }
 
-/* Streamlit's 7 columns */
+.calendar-inner {
+    width: 100%;
+}
 
-div[data-testid="stHorizontalBlock"] {
+/* Remove spacing between the 7 calendar columns. */
+.calendar-inner div[data-testid="stHorizontalBlock"] {
     gap: 0 !important;
+    align-items: stretch !important;
 }
 
-/* Day header */
+.calendar-inner div[data-testid="column"] {
+    padding: 0 !important;
+}
+
+/* ============================================================
+   DAY HEADERS
+   ============================================================ */
 
 .day-header {
-    height: 62px;
+    height: 58px;
     box-sizing: border-box;
     text-align: center;
-    padding: 9px 4px 6px;
-    background: #FFFCFD;
-    border-bottom: 1px solid #EEE6E8;
+    padding: 8px 3px 5px;
+    background: #FFFDFD;
+    border-right: 1px solid #F0E9EB;
+    border-bottom: 1px solid #ECE4E7;
 }
 
 .day-header.today {
-    background: #F9E7EB;
+    background: #F9E8EC;
 }
 
 .day-name {
-    color: #9A8C91;
-    font-size: 0.61rem;
+    color: #9B8C92;
+    font-size: 0.56rem;
     font-weight: 800;
-    letter-spacing: 1px;
+    letter-spacing: 1.05px;
     text-transform: uppercase;
 }
 
 .day-number {
     color: #393235;
-    font-size: 1.25rem;
+    font-size: 1.18rem;
     font-weight: 800;
-    line-height: 1.25;
+    line-height: 1.18;
 }
 
 .today-pill {
     display: inline-block;
-    color: #A85D6C;
+    margin-top: 1px;
+    color: #A65B6A;
     background: #FFFFFF;
     border-radius: 999px;
-    padding: 1px 6px;
-    font-size: 0.45rem;
+    padding: 1px 5px;
+    font-size: 0.42rem;
     font-weight: 800;
-    letter-spacing: .7px;
+    letter-spacing: 0.65px;
     text-transform: uppercase;
 }
 
-/* ---------- SLOT LABEL ---------- */
+/* ============================================================
+   MEAL ROW LABELS
+   ============================================================ */
 
 .slot-label {
     color: #9A8C91;
-    font-size: 0.57rem;
+    font-size: 0.54rem;
     font-weight: 800;
-    letter-spacing: .75px;
+    letter-spacing: 0.72px;
     text-transform: uppercase;
-    margin: 8px 7px 4px;
+    padding: 7px 7px 3px;
+    height: 27px;
+    box-sizing: border-box;
 }
 
-/* ---------- INLINE CALENDAR POPOVER CARDS ---------- */
+/* ============================================================
+   INLINE DROPDOWN CARDS
+   ============================================================ */
 
-/* Streamlit popover buttons are the actual calendar cards. */
+/*
+   There is deliberately NO separate picker below the calendar.
 
-div[data-testid="stHorizontalBlock"] .stPopover {
-    margin: 0 6px 5px;
+   Every calendar cell is one compact selectbox:
+       click card → dropdown opens → choose meal → auto-saves.
+*/
+
+.calendar-inner div[data-testid="stSelectbox"] {
+    margin: 0 5px 7px !important;
+    width: calc(100% - 10px) !important;
 }
 
-div[data-testid="stHorizontalBlock"] .stPopover > button {
-    width: 100% !important;
-    height: 77px !important;
-    min-height: 77px !important;
+.calendar-inner div[data-baseweb="select"] > div {
+    min-height: 58px !important;
+    height: 58px !important;
+    box-sizing: border-box !important;
 
-    background: #FCFAFB !important;
-    color: #423A3D !important;
-
-    border: 1px solid #E9E0E3 !important;
-    border-radius: 12px !important;
-
-    padding: 7px !important;
-
-    font-size: 0.68rem !important;
-    font-weight: 700 !important;
-    line-height: 1.25 !important;
-
-    box-shadow: none !important;
-}
-
-div[data-testid="stHorizontalBlock"] .stPopover > button:hover {
-    background: #FFF7F9 !important;
-    color: #A55C6A !important;
-    border-color: #D998A4 !important;
-    transform: translateY(-1px);
-}
-
-.popover-title {
-    color: #40383B;
-    font-size: 0.98rem;
-    font-weight: 800;
-}
-
-.popover-subtitle {
-    color: #9A8C91;
-    font-size: 0.7rem;
-    margin: 2px 0 12px;
-}
-
-/* Compact popover controls */
-
-div[data-testid="stPopoverBody"] {
-    min-width: 260px;
-}
-
-div[data-testid="stPopoverBody"] div[data-baseweb="select"] > div {
-    border-radius: 10px !important;
-    border-color: #E4DADD !important;
-    background: #FFFBFC !important;
-}
-
-div[data-testid="stPopoverBody"] .stButton > button {
-    min-height: 38px !important;
-    height: 38px !important;
-    border-radius: 10px !important;
-    font-size: 0.7rem !important;
-}
-
-/* Empty-looking card */
-div[data-testid="stPopover"] > button[aria-label*="choose"] {
     background: #FFFDFD !important;
-    border-style: dashed !important;
-    color: #7D7075 !important;
+    color: #5D5257 !important;
+
+    border: 1px solid #E7DDE0 !important;
+    border-radius: 11px !important;
+
+    box-shadow: 0 1px 2px rgba(70, 45, 52, 0.025) !important;
+
+    padding: 0 7px !important;
+
+    transition:
+        background-color 120ms ease,
+        border-color 120ms ease,
+        box-shadow 120ms ease !important;
 }
 
-/* ---------- SEPARATOR BETWEEN MEAL TYPES ---------- */
+.calendar-inner div[data-baseweb="select"] > div:hover {
+    background: #FFF7F9 !important;
+    border-color: #DCA4AF !important;
+    box-shadow: 0 3px 10px rgba(170, 90, 105, 0.075) !important;
+}
+
+/* The selected text inside the card. */
+.calendar-inner div[data-baseweb="select"] span {
+    color: #5D5257 !important;
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+}
+
+/* Dropdown arrow. */
+.calendar-inner div[data-baseweb="select"] svg {
+    color: #B57A85 !important;
+}
+
+/* ============================================================
+   DROPDOWN MENU
+   ============================================================ */
+
+div[data-baseweb="popover"] {
+    border-radius: 12px !important;
+}
+
+div[data-baseweb="popover"] ul {
+    background: #FFFCFD !important;
+    border: 1px solid #E4DADD !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(70, 45, 52, 0.12) !important;
+    padding: 4px !important;
+}
+
+div[data-baseweb="popover"] li {
+    color: #5D5257 !important;
+    font-size: 0.7rem !important;
+    border-radius: 8px !important;
+}
+
+div[data-baseweb="popover"] li:hover {
+    background: #F9E8EC !important;
+    color: #A65D6C !important;
+}
+
+/* ============================================================
+   ROW SEPARATORS
+   ============================================================ */
 
 .slot-divider {
     height: 1px;
     background: #EEE7E9;
-    margin: 3px 0;
+    margin: 1px 0;
 }
 
-/* ---------- FOOTER ---------- */
+/* ============================================================
+   STREAMLIT TOAST
+   ============================================================ */
+
+div[data-testid="stToast"] {
+    background: #FFF8FA !important;
+    border: 1px solid #E5B8C1 !important;
+    color: #8F5360 !important;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
 
 .footer-note {
     text-align: center;
-    color: #B2A6AA;
-    font-size: 0.65rem;
-    padding-top: 16px;
+    color: #B4A7AC;
+    font-size: 0.58rem;
+    padding-top: 11px;
 }
 
-/* ---------- MOBILE ---------- */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 
 @media (max-width: 900px) {
     .main .block-container {
-        padding-left: 0.35rem;
-        padding-right: 0.35rem;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
     }
 
     .calendar-shell {
@@ -309,7 +365,7 @@ div[data-testid="stPopover"] > button[aria-label*="choose"] {
     }
 
     .calendar-inner {
-        min-width: 920px;
+        min-width: 910px;
     }
 
     .app-title {
@@ -324,7 +380,7 @@ div[data-testid="stPopover"] > button[aria-label*="choose"] {
 
 
 # ============================================================
-# LOAD SHEET
+# DATA
 # ============================================================
 
 @st.cache_data(ttl=20)
@@ -361,7 +417,6 @@ def load_sheet():
     )
 
     required = {"Meal_ID", "Meal_Name"}
-
     missing = required - set(data.columns)
 
     if missing:
@@ -381,6 +436,18 @@ def load_sheet():
             .astype(str)
             .str.strip()
         )
+
+    data["Meal_ID"] = (
+        data["Meal_ID"]
+        .astype(str)
+        .str.strip()
+    )
+
+    data["Meal_Name"] = (
+        data["Meal_Name"]
+        .astype(str)
+        .str.strip()
+    )
 
     return data
 
@@ -414,7 +481,6 @@ def get_date_for_day(day_name):
 def get_votes_for_slot(day, meal_type):
 
     target = f"{day}_{meal_type}"
-
     votes = {}
 
     for person in USERS:
@@ -428,12 +494,31 @@ def get_votes_for_slot(day, meal_type):
         ]
 
         if not matches.empty:
-
             votes[person] = str(
                 matches.iloc[0]["Meal_ID"]
             )
 
     return votes
+
+
+def get_current_user_meal_id(day, meal_type, person):
+
+    target = f"{day}_{meal_type}"
+
+    matches = df[
+        df[person].str.contains(
+            target,
+            regex=False,
+            na=False,
+        )
+    ]
+
+    if matches.empty:
+        return None
+
+    return str(
+        matches.iloc[0]["Meal_ID"]
+    )
 
 
 def get_meal_name(meal_id):
@@ -449,23 +534,6 @@ def get_meal_name(meal_id):
     return str(
         matches.iloc[0]["Meal_Name"]
     )
-
-
-def get_current_user_meal_id(day, meal_type, person):
-    target = f"{day}_{meal_type}"
-
-    matches = df[
-        df[person].str.contains(
-            target,
-            regex=False,
-            na=False,
-        )
-    ]
-
-    if matches.empty:
-        return None
-
-    return str(matches.iloc[0]["Meal_ID"])
 
 
 def get_slot_info(day, meal_type):
@@ -535,6 +603,8 @@ def save_vote(meal_id, person, slot):
                 return False
 
         except ValueError:
+            # Apps Script can occasionally return a redirect/html
+            # response even though the write succeeded.
             pass
 
         load_sheet.clear()
@@ -569,10 +639,9 @@ user = st.selectbox(
     USERS,
     index=0,
     label_visibility="collapsed",
+    key="active_user",
 )
 
-
-# User pills
 
 pills = ""
 
@@ -597,7 +666,7 @@ st.markdown(
 
 
 # ============================================================
-# PROGRESS
+# WEEK PROGRESS
 # ============================================================
 
 planned = 0
@@ -639,13 +708,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# -------------------------
+
+# ============================================================
 # DAY HEADERS
-# -------------------------
+# ============================================================
 
-header_cols = st.columns(7, gap="small")
+header_cols = st.columns(
+    7,
+    gap="small",
+)
 
-for col, day in zip(header_cols, DAYS):
+for col, day in zip(
+    header_cols,
+    DAYS,
+):
 
     with col:
 
@@ -670,129 +746,135 @@ for col, day in zip(header_cols, DAYS):
         )
 
 
-# -------------------------
-# THREE MEAL ROWS
-# -------------------------
+# ============================================================
+# BREAKFAST / LUNCH / DINNER
+# ============================================================
 
-for meal_index, (meal_icon, meal_type) in enumerate(MEAL_TYPES):
+for meal_index, (meal_icon, meal_type) in enumerate(
+    MEAL_TYPES
+):
 
-    # Small meal label above each row.
-    label_cols = st.columns(7, gap="small")
+    # Row labels.
+    label_cols = st.columns(
+        7,
+        gap="small",
+    )
 
     for col in label_cols:
+
         with col:
+
             st.markdown(
-                f'<div class="slot-label">{meal_icon} {meal_type}</div>',
+                f'<div class="slot-label">'
+                f'{meal_icon} {meal_type}'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
-    # Every calendar card is now a popover.
-    # Nothing opens below the calendar.
-    meal_cols = st.columns(7, gap="small")
+    # Seven actual dropdowns.
+    meal_cols = st.columns(
+        7,
+        gap="small",
+    )
 
-    for col, day in zip(meal_cols, DAYS):
+    for col, day in zip(
+        meal_cols,
+        DAYS,
+    ):
 
         with col:
 
-            winning_meal, voters, votes = get_slot_info(
-                day,
-                meal_type,
-            )
-
             slot = f"{day}_{meal_type}"
 
-            current_user_meal = get_current_user_meal_id(
-                day,
-                meal_type,
-                user,
+            current_user_meal = (
+                get_current_user_meal_id(
+                    day,
+                    meal_type,
+                    user,
+                )
             )
 
-            if winning_meal is None:
-                button_label = "＋  choose"
+            winning_meal, voters, _ = (
+                get_slot_info(
+                    day,
+                    meal_type,
+                )
+            )
+
+            # Options are IDs because IDs are what the Apps Script writes.
+            # The placeholder makes an unvoted slot look like "choose".
+            meal_ids = (
+                ["__EMPTY__"]
+                + df["Meal_ID"].astype(str).tolist()
+            )
+
+            meal_lookup = dict(
+                zip(
+                    df["Meal_ID"].astype(str),
+                    df["Meal_Name"].astype(str),
+                )
+            )
+
+            slot_votes = get_votes_for_slot(
+                day,
+                meal_type,
+            )
+
+            def format_meal(meal_id):
+                if meal_id == "__EMPTY__":
+                    return "＋  choose"
+
+                meal_name = meal_lookup.get(
+                    str(meal_id),
+                    str(meal_id),
+                )
+
+                vote_count = sum(
+                    1
+                    for voted_meal in slot_votes.values()
+                    if str(voted_meal) == str(meal_id)
+                )
+
+                if vote_count == len(USERS):
+                    return f"🍛  {meal_name}  ·  ✓"
+
+                if vote_count > 0:
+                    return f"🍛  {meal_name}  ·  {vote_count}/3"
+
+                return f"🍛  {meal_name}"
+
+            if current_user_meal in meal_ids:
+                default_index = meal_ids.index(
+                    current_user_meal
+                )
             else:
-                name = get_meal_name(winning_meal)
-                count = len(voters)
+                default_index = 0
 
-                if count == len(USERS):
-                    button_label = f"🍛 {name}  ·  ✓"
-                else:
-                    button_label = f"🍛 {name}  ·  {count}/3"
+            # A unique key is essential so Streamlit can tell that
+            # this particular calendar cell changed.
+            widget_key = (
+                f"meal_{user}_{slot}"
+            )
 
-            # Popover is attached directly to the calendar card.
-            with st.popover(
-                button_label,
-                use_container_width=True,
+            # If the user changed this dropdown, this value is the
+            # new selection during this rerun.
+            selected_id = st.selectbox(
+                "meal",
+                meal_ids,
+                index=default_index,
+                format_func=format_meal,
+                key=widget_key,
+                label_visibility="collapsed",
+            )
+
+            # Auto-save immediately after a real change.
+            if (
+                selected_id != "__EMPTY__"
+                and str(selected_id)
+                != str(current_user_meal)
             ):
 
-                st.markdown(
-                    f"""
-                    <div class="popover-title">
-                        {meal_icon} {day} · {meal_type}
-                    </div>
-                    <div class="popover-subtitle">
-                        choose your meal, {user} ♡
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                meal_options = df[
-                    ["Meal_ID", "Meal_Name"]
-                ].copy()
-
-                meal_options["Meal_ID"] = (
-                    meal_options["Meal_ID"]
-                    .astype(str)
-                )
-
-                meal_options["Meal_Name"] = (
-                    meal_options["Meal_Name"]
-                    .astype(str)
-                )
-
-                option_ids = meal_options["Meal_ID"].tolist()
-                option_names = meal_options["Meal_Name"].tolist()
-
-                if current_user_meal in option_ids:
-                    default_index = option_ids.index(
-                        current_user_meal
-                    )
-                else:
-                    default_index = 0
-
-                selected_id = st.selectbox(
-                    "Meal",
-                    option_ids,
-                    index=default_index,
-                    format_func=lambda meal_id: (
-                        dict(
-                            zip(option_ids, option_names)
-                        ).get(
-                            str(meal_id),
-                            str(meal_id),
-                        )
-                    ),
-                    key=f"select_{slot}",
-                    label_visibility="collapsed",
-                )
-
-                save_col, clear_col = st.columns(2)
-
-                with save_col:
-                    save_clicked = st.button(
-                        "Save ♡",
-                        key=f"save_{slot}",
-                        use_container_width=True,
-                    )
-
-                with clear_col:
-                    close_clicked = st.button(
-                        "Close",
-                        key=f"close_{slot}",
-                        use_container_width=True,
-                    )
-
-                if save_clicked:
+                with st.spinner("saving ♡"):
 
                     saved = save_vote(
                         selected_id,
@@ -800,17 +882,18 @@ for meal_index, (meal_icon, meal_type) in enumerate(MEAL_TYPES):
                         slot,
                     )
 
-                    if saved:
-                        st.toast(
-                            f"Saved for {day} {meal_type} ♡"
-                        )
-                        st.rerun()
+                if saved:
 
-                if close_clicked:
+                    st.toast(
+                        f"Saved {day} {meal_type} ♡",
+                        icon="♡",
+                    )
+
                     st.rerun()
 
-    # Subtle separator between breakfast/lunch/dinner.
+    # Small divider between meal groups.
     if meal_index < len(MEAL_TYPES) - 1:
+
         st.markdown(
             '<div class="slot-divider"></div>',
             unsafe_allow_html=True,
@@ -822,10 +905,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-# ============================================================
-# FOOTER
-# ============================================================
 
 # ============================================================
 # FOOTER
