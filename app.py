@@ -12,7 +12,7 @@ SHEET_ID = "1XCwQ23-1RlkqKcHo6ECj6WDGMa3TUKxHc5AoB48CoBI"
 
 # IMPORTANT:
 # Replace this with your deployed Google Apps Script Web App URL.
-API_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE"
+API_URL = "https://script.google.com/macros/s/AKfycbxFvVUQcN1tnr9HCeRjrJz2nBSDH_TTdmWZCUxedU05TMgnNUwxWqFKTDip5hruuHMp/exec"
 
 USERS = ["Jasmine", "Aashi", "Meera"]
 MEAL_TYPES = [
