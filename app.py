@@ -32,39 +32,42 @@ flatmates = ["Select Profile", "Roomie1", "Roomie2", "Roomie3"]
 current_user = st.selectbox("Who is swiping right now?", flatmates)
 
 if current_user != "Select Profile":
-    # Load live spreadsheet rows with error handling diagnostic tool
     try:
+        # Load spreadsheet data
         df = pd.read_csv(READ_URL)
-        # Force all column names to string and strip whitespace to prevent parsing errors
         df.columns = df.columns.str.strip()
     except Exception as e:
-        st.error(f"Spreadsheet Read Error: {str(e)}")
-        st.info("💡 Pro-Tip: Go to your Google Sheet, type something into the first row of your description column (e.g., 'Healthy Option') and try reloading this page.")
+        st.error("Could not fetch data from Google Sheets.")
+        st.info("Check that your Google Sheet's Share settings are set to 'Anyone with the link can edit'.")
         st.stop()
 
     user_col = f"{current_user}_Vote"
     
-    # Fill blank description boxes safely so the code doesn't crash
-    if 'Description' in df.columns:
-        df['Description'] = df['Description'].fillna("Healthy homemade meal choice").astype(str)
-    else:
-        df['Description'] = "Healthy homemade meal choice"
+    # Safely handle the Description column whether it is completely missing or empty
+    has_description = 'Description' in df.columns
+    if has_description:
+        df['Description'] = df['Description'].fillna("").astype(str).str.strip()
 
-    # Check for empty cells or unvoted entries
+    # Verify that the required user voting column exists
     if user_col in df.columns:
         df[user_col] = df[user_col].fillna("None").astype(str).str.strip()
         unvoted_meals = df[df[user_col] == "None"]
     else:
-        st.error(f"Column '{user_col}' not found in your Google Sheet headers. Please check row 1 spelling.")
+        st.error(f"Column '{user_col}' missing from your Google Sheet headers. Please check Row 1 spelling.")
         st.stop()
 
+    # --------------------------------------------------------------------
+    # 3. SWIPING / VOTING INTERFACE
+    # --------------------------------------------------------------------
     if not unvoted_meals.empty:
-        # Pull the top active item card
         current_row = unvoted_meals.iloc[0]
         meal_id = current_row['Meal_ID']
         
-        # Display Current Food Card
-        st.info(f"### {current_row['Meal_Name']}\n\n*{current_row['Description']}*")
+        # Display the meal card (displays description only if it has text)
+        if has_description and current_row['Description'] != "":
+            st.info(f"### {current_row['Meal_Name']}\n\n*{current_row['Description']}*")
+        else:
+            st.info(f"### {current_row['Meal_Name']}")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -90,12 +93,12 @@ if current_user != "Select Profile":
         st.success("🎉 You've swiped through all available meals!")
 
     # --------------------------------------------------------------------
-    # 3. LIVE MATCHES CONSENSUS VIEW
+    # 4. LIVE MATCHES CONSENSUS VIEW
     # --------------------------------------------------------------------
     st.markdown("### 📋 Final Group Consensus Matches")
     st.caption("Meals liked by ALL 3 flatmates populate here:")
 
-    # Ensure all voting columns exist before evaluating logic
+    # Sanitize and fill the rest of the roomie columns to avoid sorting errors
     vote_cols = ['Roomie1_Vote', 'Roomie2_Vote', 'Roomie3_Vote']
     for col in vote_cols:
         if col in df.columns:
@@ -103,6 +106,7 @@ if current_user != "Select Profile":
         else:
             df[col] = "None"
 
+    # Filter out absolute matches where everyone voted 'Like'
     consensus_df = df[
         (df['Roomie1_Vote'] == "Like") & 
         (df['Roomie2_Vote'] == "Like") & 
@@ -111,6 +115,9 @@ if current_user != "Select Profile":
 
     if not consensus_df.empty:
         for _, row in consensus_df.iterrows():
-            st.markdown(f"✅ **{row['Meal_Name']}** — *{row['Description']}*")
+            if has_description and row['Description'] != "":
+                st.markdown(f"✅ **{row['Meal_Name']}** — *{row['Description']}*")
+            else:
+                st.markdown(f"✅ **{row['Meal_Name']}**")
     else:
         st.warning("No uniform matches found yet. Keep swiping!")
